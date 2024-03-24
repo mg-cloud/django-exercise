@@ -6,8 +6,9 @@ from django.urls import reverse_lazy
 from django.contrib.auth.models import AnonymousUser
 from rest_framework import status
 from users.models import User
+from users.serializers import UserSerializer
 from sales.models import Sale
-from sales.serializers import SaleSerializer
+from sales.serializers import ArticleSerializer, SaleSerializer
 from sales.views import SaleViewSet
 from .test_article import create_article
 from .test_articlecategory import create_category
@@ -17,9 +18,8 @@ def create_sale(author, date, article):
     """Create a dummy sale."""
     return Sale.objects.create(date=date, author=author, article=article, quantity=10, unit_selling_price=9.1)
 
-
-class SaleModelTests(TestCase):
-    """Test SaleModel."""
+class SaleMethodTests(TestCase):
+    """Test Sale method."""
     def setUp(self):
         """Set up."""
         self.basic_user1 = User.objects.create_user(email='test1@email.fr', password='astrongpwd')
@@ -31,8 +31,7 @@ class SaleModelTests(TestCase):
         """Test total selling price."""
         self.assertEqual(self.anewsale.get_total_selling_price(), 91.0)
 
-
-class SaleViewSetTests(TestCase):
+class SaleTests(TestCase):
     """Test SaleViewSet."""
 
     def setUp(self):
@@ -56,13 +55,9 @@ class SaleViewSetTests(TestCase):
         anewsale = create_sale(self.basic_user2, timezone.now().date(), self.anewarticle)
         # Make sure we serialized the expected fields
         serialized_sale = SaleSerializer(anewsale, context={'request': None})
-        expected_fields = ['date',
-                           'article_category',
-                           'article_code',
-                           'article_name',
-                           'quantity',
-                           'unit_selling_price',
-                           'total_selling_price']
+        expected_fields = ['url', 'author', 'date', 'article',
+                           'article_category', 'article_code', 'article_name',
+                           'quantity', 'unit_selling_price', 'total_selling_price']
         self.assertEqual(list(serialized_sale.get_fields().keys()), expected_fields)
 
         # date, catégorie article, code article, nom article, quantité, prix de vente unitaire, prix de vente total
@@ -92,3 +87,29 @@ class SaleViewSetTests(TestCase):
         request.user = AnonymousUser()
         response = SaleViewSet.as_view({'get': 'list'})(request)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_delete_sale(self):
+        sale_data = {
+            'date': timezone.now().date(),
+            'author': self.basic_user1.pk,
+            'article': self.anewarticle.pk,
+            'quantity': 4,
+            'unit_selling_price': 15.0
+        }
+        self.client.force_login(user=self.basic_user1)
+        self.assertEqual(Sale.objects.count(), 0)
+        # Check create
+        response_post = self.client.post(self.url, data=sale_data)
+        self.assertEqual(response_post.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Sale.objects.count(), 1)
+        # Check total_selling_price
+        self.assertEqual(response_post.data['total_selling_price'], 60.0)
+        # Check delete forbidden for a different user
+        self.client.force_login(user=self.basic_user2)
+        response_delete = self.client.delete(response_post.data['url'])
+        self.assertEqual(response_delete.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(Sale.objects.count(), 1)
+        # Check delete ok with the same user
+        response_delete = self.client.delete(response_post.data['url'])
+        self.assertEqual(response_delete.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Sale.objects.count(), 0)

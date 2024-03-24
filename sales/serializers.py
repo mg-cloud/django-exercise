@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from users.models import User
 from .models import Article, ArticleCategory, Sale
 
 
@@ -22,10 +23,22 @@ class SaleSerializer(serializers.HyperlinkedModelSerializer):
     article_name = serializers.SerializerMethodField()
     article_category = serializers.SerializerMethodField()
     total_selling_price = serializers.SerializerMethodField()
+    author = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    article = serializers.PrimaryKeyRelatedField(queryset=Article.objects.all())
 
     class Meta:
         model = Sale
-        fields = ['date', 'article_category', 'article_code', 'article_name', 'quantity', 'unit_selling_price', 'total_selling_price']
+        fields = ['url',
+                  'author',
+                  'date',
+                  'article',
+                  'article_category',
+                  'article_code',
+                  'article_name',
+                  'quantity',
+                  'unit_selling_price',
+                  'total_selling_price']
+        read_only_fields = ['total_selling_price']
 
     def get_article_code(self, obj):
         return obj.article.code
