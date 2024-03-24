@@ -21,7 +21,7 @@ class ArticleCategoryViewSetTests(TestCase):
         """Set up."""
         self.url = reverse_lazy('articlecategory-list')
         self.factory = RequestFactory()
-        self.basic_user = User.objects.create_user(email='test1@email.fr', password='astrongpwd')
+        self.basic_user = User.objects.create_user(email='test1@email.fr')
 
     def test_auth_no_category(self):
         """Test with no category."""

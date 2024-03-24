@@ -9,10 +9,10 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
     Sale-level permission to only allow author of an object to edit it.
     """
     def has_object_permission(self, request, view, obj):
-        # Read permissions are allowed to any request,
-        # so we'll always allow GET, HEAD or OPTIONS requests.
+        # If request is read only, allow it
         if request.method in permissions.SAFE_METHODS:
             return True
+        # Else check that the user is the author of the sale
         return obj.author == request.user
 
 

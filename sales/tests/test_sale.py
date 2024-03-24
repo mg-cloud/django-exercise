@@ -23,7 +23,7 @@ class SaleMethodTests(TestCase):
     """Test Sale method."""
     def setUp(self):
         """Set up."""
-        self.basic_user1 = User.objects.create_user(email='test1@email.fr', password='astrongpwd')
+        self.basic_user1 = User.objects.create_user(email='test1@email.fr')
         self.anewcategory = create_category('anewarticle')
         self.anewarticle = create_article('anewarticle', self.anewcategory)
         self.anewsale = create_sale(self.basic_user1, timezone.now().date(), self.anewarticle)
@@ -40,10 +40,17 @@ class SaleTests(TestCase):
         """Set up."""
         self.url = reverse_lazy('sale-list')
         self.factory = RequestFactory()
-        self.basic_user1 = User.objects.create_user(email='test1@email.fr', password='astrongpwd')
-        self.basic_user2 = User.objects.create_user(email='test2@email.fr', password='astrongpwd')
+        self.basic_user1 = User.objects.create_user(email='test1@email.fr')
+        self.basic_user2 = User.objects.create_user(email='test2@email.fr')
         self.anewcategory = create_category('anewarticle')
         self.anewarticle = create_article('anewarticle', self.anewcategory)
+        self.sale_data = {
+            'date': '2024-01-01',
+            'author': self.basic_user1.pk,
+            'article': self.anewarticle.pk,
+            'quantity': 4,
+            'unit_selling_price': 15.0
+        }
 
     def test_auth_no_sale(self):
         """Test with no sale."""
@@ -92,38 +99,33 @@ class SaleTests(TestCase):
 
     def test_crud_sale(self):
         """Test Create, Update, Deletegit."""
-        sale_data = {
-            'date': '2024-01-01',
-            'author': self.basic_user1.pk,
-            'article': self.anewarticle.pk,
-            'quantity': 4,
-            'unit_selling_price': 15.0
-        }
         self.client.force_login(user=self.basic_user1)
         self.assertEqual(Sale.objects.count(), 0)
         # Check create
-        response_post = self.client.post(self.url, data=sale_data)
+        response_post = self.client.post(self.url, data=self.sale_data)
         sale_created = response_post.data
         self.assertEqual(response_post.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Sale.objects.count(), 1)
         # Check total_selling_price
         self.assertEqual(response_post.data['total_selling_price'], 60.0)
         # Check update
-        sale_data['quantity'] = 1
+        self.sale_data['quantity'] = 1
         response_update_user1 = self.client.put(sale_created['url'],
-                                          data=sale_data,
-                                          content_type='application/json')
+                                                data=self.sale_data,
+                                                content_type='application/json')
         self.assertEqual(response_update_user1.status_code, status.HTTP_200_OK)
         self.assertEqual(Sale.objects.first().quantity, 1)
+
         # Check update/delete forbidden for a different user
         self.client.force_login(user=self.basic_user2)
         response_update_user2 = self.client.put(sale_created['url'],
-                                                data=sale_data,
+                                                data=self.sale_data,
                                                 content_type='application/json')
         self.assertEqual(response_update_user2.status_code, status.HTTP_403_FORBIDDEN)
         response_delete_user2 = self.client.delete(sale_created['url'])
         self.assertEqual(response_delete_user2.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Sale.objects.count(), 1)
+
         # Check delete ok with the same user
         self.client.force_login(user=self.basic_user1)
         response_delete_user1 = self.client.delete(sale_created['url'])

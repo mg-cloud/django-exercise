@@ -25,7 +25,7 @@ class ArticleTests(TestCase):
         """Set up."""
         self.url = reverse_lazy('article-list')
         self.factory = RequestFactory()
-        self.basic_user = User.objects.create_user(email='test1@email.fr', password='astrongpwd')
+        self.basic_user = User.objects.create_user(email='test1@email.fr')
         self.dummy_category = create_category('anewcatogory')
 
     def test_auth_no_article(self):
