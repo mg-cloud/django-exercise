@@ -3,7 +3,7 @@ from django.db import models
 
 class ArticleCategory(models.Model):
     """
-    Category of an article
+    Category of an article.
     """
 
     class Meta:
@@ -70,6 +70,10 @@ class Sale(models.Model):
     unit_selling_price = models.DecimalField(
         "Unit selling price", max_digits=11, decimal_places=2
     )
+
+    def get_total_selling_price(self):
+        """Retuns the total selling price."""
+        return self.quantity * self.unit_selling_price
 
     def __str__(self):
         return f"{self.date} - {self.quantity} {self.article.name}"
