@@ -55,6 +55,7 @@ class ArticleTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_create_delete_article(self):
+        """Test create/delete."""
         serialized_category = ArticleCategorySerializer(self.dummy_category, context={'request': None})
         article_data = {"code": "AAA999",
                         "name": "ArticleName",

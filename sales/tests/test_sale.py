@@ -18,6 +18,7 @@ def create_sale(author, date, article):
     """Create a dummy sale."""
     return Sale.objects.create(date=date, author=author, article=article, quantity=10, unit_selling_price=9.1)
 
+
 class SaleMethodTests(TestCase):
     """Test Sale method."""
     def setUp(self):
@@ -30,6 +31,7 @@ class SaleMethodTests(TestCase):
     def test_total_selling_price(self):
         """Test total selling price."""
         self.assertEqual(self.anewsale.get_total_selling_price(), 91.0)
+
 
 class SaleTests(TestCase):
     """Test SaleViewSet."""
@@ -88,9 +90,10 @@ class SaleTests(TestCase):
         response = SaleViewSet.as_view({'get': 'list'})(request)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_create_delete_sale(self):
+    def test_crud_sale(self):
+        """Test Create, Update, Deletegit."""
         sale_data = {
-            'date': timezone.now().date(),
+            'date': '2024-01-01',
             'author': self.basic_user1.pk,
             'article': self.anewarticle.pk,
             'quantity': 4,
@@ -100,16 +103,29 @@ class SaleTests(TestCase):
         self.assertEqual(Sale.objects.count(), 0)
         # Check create
         response_post = self.client.post(self.url, data=sale_data)
+        sale_created = response_post.data
         self.assertEqual(response_post.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Sale.objects.count(), 1)
         # Check total_selling_price
         self.assertEqual(response_post.data['total_selling_price'], 60.0)
-        # Check delete forbidden for a different user
+        # Check update
+        sale_data['quantity'] = 1
+        response_update_user1 = self.client.put(sale_created['url'],
+                                          data=sale_data,
+                                          content_type='application/json')
+        self.assertEqual(response_update_user1.status_code, status.HTTP_200_OK)
+        self.assertEqual(Sale.objects.first().quantity, 1)
+        # Check update/delete forbidden for a different user
         self.client.force_login(user=self.basic_user2)
-        response_delete = self.client.delete(response_post.data['url'])
-        self.assertEqual(response_delete.status_code, status.HTTP_403_FORBIDDEN)
+        response_update_user2 = self.client.put(sale_created['url'],
+                                                data=sale_data,
+                                                content_type='application/json')
+        self.assertEqual(response_update_user2.status_code, status.HTTP_403_FORBIDDEN)
+        response_delete_user2 = self.client.delete(sale_created['url'])
+        self.assertEqual(response_delete_user2.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Sale.objects.count(), 1)
         # Check delete ok with the same user
-        response_delete = self.client.delete(response_post.data['url'])
-        self.assertEqual(response_delete.status_code, status.HTTP_204_NO_CONTENT)
+        self.client.force_login(user=self.basic_user1)
+        response_delete_user1 = self.client.delete(sale_created['url'])
+        self.assertEqual(response_delete_user1.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Sale.objects.count(), 0)
