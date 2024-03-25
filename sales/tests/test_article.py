@@ -9,13 +9,14 @@ from sales.serializers import ArticleSerializer, ArticleCategorySerializer
 from sales.views import ArticleViewSet
 from .test_articlecategory import create_category
 
+TEST_ARTICLE_MANUFACTURING_COST = 999.99
 
 def create_article(code, category):
     """Create a dummy article."""
     return Article.objects.create(code=code,
                                   category=category,
                                   name='anewarticle',
-                                  manufacturing_cost=999.99)
+                                  manufacturing_cost=TEST_ARTICLE_MANUFACTURING_COST)
 
 
 class ArticleTests(TestCase):

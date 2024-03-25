@@ -1,3 +1,4 @@
+from django.urls import reverse_lazy
 from rest_framework import serializers
 from users.models import User
 from .models import Article, ArticleCategory, Sale
@@ -51,3 +52,28 @@ class SaleSerializer(serializers.HyperlinkedModelSerializer):
 
     def get_total_selling_price(self, obj):
         return obj.get_total_selling_price()
+
+
+class AggregatedSaleSerializer(serializers.ModelSerializer):
+    """Serialize of Sale aggregated."""
+
+    class Meta:
+        model = Sale
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        """Override representation to give a more detailed view of the aggregated sale:
+            - article url : link to the article
+            - category url : link to the article category
+            - sales_total_revenue : total revenue from sales
+            - margin : sales_total_revenue - manufacturing_cost
+            - last_sale_date"""
+        return {
+                "article": self.context['request'].build_absolute_uri(reverse_lazy("article-detail", args=[instance['article']])),
+                # "category": instance['category'],
+                "category": self.context['request'].build_absolute_uri(reverse_lazy("articlecategory-detail", args=[instance['category']])),
+                # round to 2 decimals as it's most of the time the currency decimal place
+                "sales_total_revenue": round(instance["sales_total_revenue"], 2),
+                "margin": round(instance["margin"], 2),
+                "last_sale_date": instance['last_sale_date'],
+            }
