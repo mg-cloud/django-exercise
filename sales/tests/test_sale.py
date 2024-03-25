@@ -2,13 +2,12 @@
 import datetime
 from django.utils import timezone
 from django.test import RequestFactory, TestCase
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.contrib.auth.models import AnonymousUser
 from rest_framework import status
 from users.models import User
-from users.serializers import UserSerializer
 from sales.models import Sale
-from sales.serializers import ArticleSerializer, SaleSerializer
+from sales.serializers import SaleSerializer
 from sales.views import SaleViewSet
 from .test_article import create_article
 from .test_articlecategory import create_category
@@ -46,8 +45,8 @@ class SaleTests(TestCase):
         self.anewarticle = create_article('anewarticle', self.anewcategory)
         self.sale_data = {
             'date': '2024-01-01',
-            'author': self.basic_user1.pk,
-            'article': self.anewarticle.pk,
+            'author': reverse('user-detail', kwargs={'pk': self.basic_user1.id}),
+            'article': reverse('article-detail', kwargs={'pk': self.anewarticle.id}),
             'quantity': 4,
             'unit_selling_price': 15.0
         }
@@ -98,9 +97,10 @@ class SaleTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_crud_sale(self):
-        """Test Create, Update, Deletegit."""
+        """Test Create, Update, Delete."""
         self.client.force_login(user=self.basic_user1)
         self.assertEqual(Sale.objects.count(), 0)
+
         # Check create
         response_post = self.client.post(self.url, data=self.sale_data)
         sale_created = response_post.data

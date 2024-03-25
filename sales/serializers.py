@@ -23,8 +23,8 @@ class SaleSerializer(serializers.HyperlinkedModelSerializer):
     article_name = serializers.SerializerMethodField()
     article_category = serializers.SerializerMethodField()
     total_selling_price = serializers.SerializerMethodField()
-    author = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-    article = serializers.PrimaryKeyRelatedField(queryset=Article.objects.all())
+    author = serializers.HyperlinkedRelatedField(queryset=User.objects.all(), view_name='user-detail')
+    article = serializers.HyperlinkedRelatedField(queryset=Article.objects.all(), view_name='article-detail')
 
     class Meta:
         model = Sale

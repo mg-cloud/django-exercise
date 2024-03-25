@@ -17,19 +17,22 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
 
 class ArticleCategoryViewSet(ModelViewSet):
+    """Article Category ViewSet."""
     queryset = ArticleCategory.objects.all().order_by('display_name')
     serializer_class = ArticleCategorySerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
 class ArticleViewSet(ModelViewSet):
+    """Article ViewSet."""
     queryset = Article.objects.all().order_by('code')
     serializer_class = ArticleSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
 class SaleViewSet(ModelViewSet):
+    """Sale Category ViewSet."""
     # Order view by most recent sales
-    queryset = Sale.objects.all().order_by('date').reverse()
+    queryset = Sale.objects.order_by('date').reverse()
     serializer_class = SaleSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
