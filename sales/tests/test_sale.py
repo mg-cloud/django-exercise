@@ -10,7 +10,7 @@ from users.models import User
 from sales.models import Sale
 from sales.serializers import SaleSerializer
 from sales.views import SaleViewSet
-from .test_article import TEST_ARTICLE_MANUFACTURING_COST, create_article
+from .test_article import create_article
 from .test_articlecategory import create_category
 
 TEST_SALE_QUANTITY = 10
@@ -98,8 +98,8 @@ class SaleTests(TestCase):
         response = SaleViewSet.as_view({'get': 'list'})(self.request)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_crud_sale(self):
-        """Test Create, Update, Delete."""
+    def test_crud_methods(self):
+        """Test Create, Update, Delete only by the same user."""
         self.client.force_login(user=self.basic_user1)
         self.assertEqual(Sale.objects.count(), 0)
 
@@ -134,8 +134,27 @@ class SaleTests(TestCase):
         self.assertEqual(response_delete_user1.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Sale.objects.count(), 0)
 
+    def test_wrong_sale_update(self):
+        self.client.force_login(user=self.basic_user1)
+        # Check add wrong quantity
+        self.sale_data['quantity'] = -1
+        response_post_wrong_quantity = self.client.post(self.url, data=self.sale_data)
+        self.assertEqual(response_post_wrong_quantity.status_code, status.HTTP_400_BAD_REQUEST)
+        # Check add wrong author
+        self.sale_data['author'] = 'test'
+        response_post_wrong_author = self.client.post(self.url, data=self.sale_data)
+        self.assertEqual(response_post_wrong_author.status_code, status.HTTP_400_BAD_REQUEST)
+        # Check add wrong unit selling price
+        self.sale_data['unit_selling_price'] = 'test'
+        response_post_wrong_unit_selling_price = self.client.post(self.url, data=self.sale_data)
+        self.assertEqual(response_post_wrong_unit_selling_price.status_code, status.HTTP_400_BAD_REQUEST)
+        # Check add wrong date
+        self.sale_data['date'] = '2021-13-32'
+        response_post_wrong_date = self.client.post(self.url, data=self.sale_data)
+        self.assertEqual(response_post_wrong_date.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_aggregated_sales(self):
-        """Test aggregated sales."""
+        """Test aggregated sales view."""
         self.client.force_login(user=self.basic_user1)
         # Check with no sales
         response = self.client.get(reverse('saleaggregated-list'))

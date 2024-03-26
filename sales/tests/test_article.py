@@ -55,8 +55,8 @@ class ArticleTests(TestCase):
         response = ArticleViewSet.as_view({'get': 'list'})(request)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_create_delete_article(self):
-        """Test create/delete."""
+    def test_crud_methods(self):
+        """Test create authorized the rest is blocked."""
         serialized_category = ArticleCategorySerializer(self.dummy_category, context={'request': None})
         article_data = {"code": "AAA999",
                         "name": "ArticleName",
@@ -68,7 +68,9 @@ class ArticleTests(TestCase):
         response_post = self.client.post(self.url, data=article_data)
         self.assertEqual(response_post.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Article.objects.count(), 1)
-        # Check delete
+        # Check update blocked
+        response_update = self.client.put(response_post.data['url'], data=article_data, content_type='application/json')
+        self.assertEqual(response_update.status_code, status.HTTP_403_FORBIDDEN)
+        # Check delete blocked
         response_delete = self.client.delete(response_post.data['url'])
-        self.assertEqual(response_delete.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Article.objects.count(), 0)
+        self.assertEqual(response_delete.status_code, status.HTTP_403_FORBIDDEN)
